@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>httpsuite — run JetBrains .http tests in CI, without the JVM</title>
-<meta name="description" content="httpsuite runs the .http files you author in GoLand — pre-request scripts, response handlers, client.test assertions — as CI tests. A single static binary, no JDK, no CGO. Verified conformant against JetBrains' own ijhttp.">
+<title>httpsuite — run .http API tests in CI, without the JVM</title>
+<meta name="description" content="httpsuite runs the .http files you author in GoLand — pre-request scripts, response handlers, client.test assertions — as CI tests, with no JDK to install and no JVM to babysit. Verified conformant against JetBrains' own ijhttp.">
 <meta name="theme-color" content="#FBFBFD">
 <meta name="color-scheme" content="light">
 
@@ -14,13 +14,13 @@
 
 <link rel="canonical" href="https://httpsuite.dev/">
 <meta property="og:title" content="httpsuite">
-<meta property="og:description" content="Run JetBrains .http tests in CI, without the JVM. A single static binary, verified conformant against ijhttp.">
+<meta property="og:description" content="Run .http API tests in CI, without the JVM. JetBrains HTTP Client compatible, verified conformant against ijhttp.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://httpsuite.dev/">
 <meta property="og:image" content="https://httpsuite.dev/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="httpsuite">
-<meta name="twitter:description" content="Run JetBrains .http tests in CI, without the JVM.">
+<meta name="twitter:description" content="Run .http API tests in CI, without the JVM. JetBrains HTTP Client compatible.">
 <meta name="twitter:image" content="https://httpsuite.dev/og-image.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -377,7 +377,6 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
         <a href="#" class="brand">
             <img src="favicon.svg" alt="" class="brand-logo">
             httpsuite
-            <span class="version-pill">pre-1.0</span>
         </a>
         <div class="nav-links">
             <a href="#how">How it works</a>
@@ -391,15 +390,15 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
 <header class="hero">
     <div class="container hero-inner">
         <img src="favicon.svg" alt="httpsuite" class="hero-logo">
-        <h1>JetBrains .http tests,<br>without the JVM.</h1>
+        <h1>Your .http tests,<br>without the JVM.</h1>
         <p class="lead">
             httpsuite runs the <code>.http</code> files you already author in GoLand or VS Code —
-            pre-request scripts, response handlers, <code>client.test</code> assertions and all —
-            as tests in CI. One static binary. No JDK, no CGO, no container bloat.
+            pre-request scripts, response handlers, <code>client.test</code> assertions and all — as
+            tests in CI. Plain text in your repo, run with no JDK to install and no JVM to babysit.
         </p>
         <div class="verified">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span><strong>Verified conformant</strong> against JetBrains' own <code>ijhttp</code></span>
+            <span><strong>JetBrains HTTP Client compatible</strong> — verified conformant against its own <code>ijhttp</code></span>
         </div>
         <div class="hero-ctas">
             <a class="btn btn-primary" href="#install">Install</a>
@@ -434,14 +433,15 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
 
 <section class="problem">
     <div class="container">
-        <span class="eyebrow">The problem</span>
-        <h2>API tests shouldn't drag a JVM into CI.</h2>
+        <span class="eyebrow">The case for .http</span>
+        <h2>API tests belong in your repo.</h2>
         <p class="prose">
-            The JetBrains HTTP Client is a great way to author and debug API requests — but running
-            those same <code>.http</code> files in CI means shipping <code>ijhttp</code> and a
-            <strong>JDK 25</strong> into every pipeline and container image. httpsuite runs the
-            identical files as a single ~14&nbsp;MB static binary: the same scripts, the same
-            assertions, none of the runtime.
+            The requests you use to build and debug an API are worth keeping — but too often they
+            live in a GUI or a cloud workspace, drifting out of sync with the code they test.
+            <code>.http</code> files put them back where they belong: <strong>plain text, versioned
+            in git, reviewed in pull requests.</strong> httpsuite runs those same files in CI — the
+            identical scripts and assertions you ran in your IDE — with nothing to install: no JDK,
+            no Node, no runtime to provision, patch, and wait on.
         </p>
 
         <div class="problem-grid">
@@ -451,7 +451,7 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
             </div>
             <div class="problem-card">
                 <div class="label">What it doesn't need</div>
-                <p>No JVM, no CGO, no daemon. A single static binary that runs on macOS, Windows, and any Linux — Alpine/musl, distroless, and <code>FROM scratch</code> containers included.</p>
+                <p>No JVM to provision, no runtime to keep patched, no daemon. It runs wherever your CI already does — macOS, Windows, and any Linux, down to Alpine/musl, distroless, and <code>FROM scratch</code> images.</p>
             </div>
         </div>
     </div>
@@ -468,8 +468,8 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
                 <div class="feature-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4-9 4-9-4 9-4z"/><path d="M3 10l9 4 9-4"/><path d="M3 14l9 4 9-4"/></svg>
                 </div>
-                <h3>One static binary</h3>
-                <p>Pure Go, no CGO, no JVM. ~14&nbsp;MB, statically linked, cross-compiles to macOS, Windows, and every Linux arch. Drops into a distroless or scratch image unchanged.</p>
+                <h3>No JVM to babysit</h3>
+                <p>Nothing to install, provision, or keep patched. Where <code>ijhttp</code> needs a JDK&nbsp;25 in every image, httpsuite is one small binary that drops into distroless or <code>scratch</code> unchanged.</p>
             </div>
 
             <div class="feature">
@@ -501,7 +501,7 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 </div>
                 <h3>Suite orchestration</h3>
-                <p>An <code>httpsuite.yaml</code> groups files, runs them in parallel or serial with per-group timeouts, and layers <code>{{variables}}</code>. Or just point it at a directory.</p>
+                <p>An <code>httpsuite.yaml</code> groups files (parallel or serial, per-group timeouts), runs data-driven rows from inline tables, JSON or CSV, retries a request until it passes, and shares one logged-in session across a group's <code>setup:</code> and files. Or just point it at a directory.</p>
             </div>
 
             <div class="feature">
@@ -510,6 +510,30 @@ footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var
                 </div>
                 <h3>CI-native output</h3>
                 <p>Coloured and aligned on a terminal, plain and diffable with no TTY, and JUnit XML via <code>--report</code> for your CI dashboard. Exit&nbsp;0 pass, 1 fail, 2 setup error.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                </div>
+                <h3>Your JetBrains environments</h3>
+                <p>Reads the same <code>http-client.env.json</code> and <code>.private.env.json</code> files GoLand uses — <code>$shared</code> and private overrides included — with <code>--env&nbsp;prod</code>. No re-keying config for CI.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+                <h3>A superset of the format</h3>
+                <p>Everything the JetBrains client parses, plus things stock <code>ijhttp</code> won't: block comments, folded and spread headers, in-place response references, and lazy <code>@var&nbsp;:=</code> declarations. Files stay portable.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </div>
+                <h3>Variables &amp; chaining</h3>
+                <p>Dynamic <code>{{$uuid}}</code>/<code>{{$timestamp}}</code>, eager and lazy vars, a shared cookie jar, and in-place chaining like <code>{{login.response.body.$.token}}</code> — carry auth and IDs across requests without a line of script.</p>
             </div>
 
         </div>
@@ -618,14 +642,14 @@ go install github.com/uradical/httpsuite@latest</pre>
 <section id="install" class="install">
     <div class="container">
         <span class="eyebrow">Install</span>
-        <h2>One binary. No runtime.</h2>
+        <h2>No JDK required.</h2>
         <p class="prose" style="margin-left:auto;margin-right:auto;">
             Static binaries for macOS, Linux, and Windows. From source needs Go 1.26+; released
             binaries need nothing. MIT licensed.
         </p>
         <p class="dev-note" style="margin-left:auto;margin-right:auto;">
             <span class="dot"></span>
-            <span><strong>Pre-1.0.</strong> In active development &mdash; flags and conventions may change before v1.</span>
+            <span><strong>Actively developed.</strong> Flags and conventions may still change.</span>
         </p>
 
 <pre class="install-code">brew install uradical/tap/httpsuite
