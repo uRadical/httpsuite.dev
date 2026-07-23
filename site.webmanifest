@@ -1,0 +1,14 @@
+{
+    "name": "httpsuite",
+    "short_name": "httpsuite",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ],
+    "theme_color": "#FBFBFD",
+    "background_color": "#FBFBFD",
+    "display": "standalone"
+}

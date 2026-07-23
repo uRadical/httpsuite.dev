@@ -1,0 +1,24 @@
+# httpsuite
+
+> Runs JetBrains HTTP Client `.http` files as API tests in CI. Executes their pre-request and response-handler JavaScript, `client.test` assertions, and declarative `# @expect` checks — as a single static binary with no JVM and no CGO.
+
+httpsuite is a test runner for the `.http` files developers author in the JetBrains HTTP Client (GoLand, IntelliJ) or the VS Code REST Client. It runs the requests, executes the associated JavaScript — pre-request scripts (`< {% %}`) and response handlers (`> {% %}`) including `client.test`/`client.assert`, `client.global` cross-request state, the response DOM for XML, `crypto`, `jwt`, and `jsonPath` — and evaluates declarative `# @expect` assertions on status, headers, JSON body, types, dates, and duration. Output is coloured on a terminal, plain and diffable in CI, and available as JUnit XML via `--report`.
+
+The JavaScript is executed by the pure-Go goja engine (ECMAScript 2015+), so httpsuite is a single statically linked binary — no JDK, no CGO — that runs on macOS, Windows, and any Linux distribution including Alpine/musl, distroless, and `FROM scratch` containers. This is the key difference from JetBrains' own `ijhttp` CLI, which requires a JDK 25.
+
+Compatibility with the JetBrains HTTP Client is verified empirically: a conformance harness runs the same `.http` files through both httpsuite and `ijhttp` and diffs their JUnit reports test-by-test. On the shared scripting API — `client`, `response`, `request`, the DOM, and `jsonPath` — the two tools agree. `crypto` and `jwt` are httpsuite extensions not present in stock `ijhttp`.
+
+Distribution: single binary, Go 1.26+ to build from source (released binaries need no toolchain), MIT licensed, Homebrew and `go install`.
+
+## Documentation
+
+- [README](https://github.com/uradical/httpsuite/blob/main/README.md): Install, usage, the scripting API, `# @expect` assertion reference, suite definitions, and output formats.
+- [Conformance harness](https://github.com/uradical/httpsuite/tree/main/conformance): How httpsuite is checked against JetBrains' `ijhttp`, and the verified results.
+
+## Source
+
+- [GitHub repository](https://github.com/uradical/httpsuite): Go source, issue tracker.
+
+## Built by
+
+- [uRadical](https://uradical.io): Developer tooling.

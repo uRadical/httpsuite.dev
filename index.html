@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>httpsuite — run JetBrains .http tests in CI, without the JVM</title>
+<meta name="description" content="httpsuite runs the .http files you author in GoLand — pre-request scripts, response handlers, client.test assertions — as CI tests. A single static binary, no JDK, no CGO. Verified conformant against JetBrains' own ijhttp.">
+<meta name="theme-color" content="#FBFBFD">
+<meta name="color-scheme" content="light">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="mask-icon" href="favicon.svg" color="#0C1A50">
+<link rel="manifest" href="site.webmanifest">
+
+<link rel="canonical" href="https://httpsuite.dev/">
+<meta property="og:title" content="httpsuite">
+<meta property="og:description" content="Run JetBrains .http tests in CI, without the JVM. A single static binary, verified conformant against ijhttp.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://httpsuite.dev/">
+<meta property="og:image" content="https://httpsuite.dev/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="httpsuite">
+<meta name="twitter:description" content="Run JetBrains .http tests in CI, without the JVM.">
+<meta name="twitter:image" content="https://httpsuite.dev/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sen:wght@400;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --navy:      #0C1A50;
+    --sky:       #5DB1FF;
+    --purple:    #9F72E1;
+    --pink:      #F659A8;
+    --gold:      #E1C631;
+
+    --bg:        #FBFBFD;
+    --bg-alt:    #F2EEE6;
+    --surface:   #FFFFFF;
+    --surface-2: #F5F3ED;
+    --hairline:  rgba(12, 26, 80, 0.09);
+    --hairline-strong: rgba(12, 26, 80, 0.16);
+    --ink:       var(--navy);
+    --ink-dim:   rgba(12, 26, 80, 0.72);
+    --ink-faint: rgba(12, 26, 80, 0.48);
+    --link:      #4A22B8;
+
+    --code-bg:   #0A1240;
+    --code-fg:   #E5EAFF;
+    --code-key:  #5DB1FF;
+    --code-str:  #E1C631;
+    --code-cmt:  rgba(245, 247, 255, 0.40);
+    --code-prompt: var(--purple);
+
+    --serif:     "Sen", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    --sans:      -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+    --mono:      ui-monospace, "SF Mono", Menlo, Monaco, "JetBrains Mono", Consolas, monospace;
+
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+    --r-xl: 28px;
+
+    --max-w: 1080px;
+    --content-w: 720px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.55;
+    letter-spacing: -0.005em;
+}
+
+a { color: var(--link); text-decoration: none; transition: opacity 0.15s ease; }
+a:hover { opacity: 0.75; }
+
+::selection { background: var(--purple); color: #fff; }
+
+code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    border-radius: 5px;
+    padding: 1px 5px;
+    color: var(--ink);
+}
+pre code, .term code, .step-code code, .compare-card code { background: none; border: 0; padding: 0; }
+
+/* ---------- Layout ---------- */
+
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 28px; }
+.prose { max-width: var(--content-w); }
+
+section { padding: 96px 0; border-top: 1px solid var(--hairline); }
+
+@media (max-width: 720px) {
+    section { padding: 64px 0; }
+    body { font-size: 16px; }
+}
+
+/* ---------- Nav ---------- */
+
+.nav {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+    border-bottom: 1px solid var(--hairline);
+}
+
+.nav-inner {
+    max-width: var(--max-w); margin: 0 auto; padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+
+.brand {
+    font-family: var(--serif); font-weight: 800; font-size: 18px;
+    letter-spacing: -0.02em; color: var(--ink);
+    display: inline-flex; align-items: center; gap: 10px;
+}
+.brand-logo { height: 26px; width: auto; display: block; }
+
+.version-pill {
+    display: inline-flex; align-items: center; margin-left: 6px;
+    padding: 3px 8px; border-radius: 6px;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-faint); background: var(--surface-2);
+    border: 1px solid var(--hairline); line-height: 1;
+}
+
+.nav-links { display: flex; gap: 24px; align-items: center; font-size: 14px; color: var(--ink-dim); }
+.nav-links a { color: inherit; }
+.nav-links a:hover { color: var(--ink); opacity: 1; }
+
+@media (max-width: 540px) {
+    .nav-links a { display: none; }
+    .nav-links a:last-child { display: inline; }
+}
+
+/* ---------- Hero ---------- */
+
+.hero { position: relative; padding: 116px 0 88px; border-top: 0; overflow: hidden; }
+
+.hero::before {
+    content: ""; position: absolute; inset: -10% -20% auto -20%; height: 640px;
+    background: radial-gradient(
+        ellipse at 50% 12%,
+        color-mix(in srgb, var(--sky) 45%, transparent) 0%,
+        color-mix(in srgb, var(--purple) 30%, transparent) 24%,
+        color-mix(in srgb, var(--pink) 22%, transparent) 42%,
+        color-mix(in srgb, var(--gold) 12%, transparent) 58%,
+        transparent 78%);
+    filter: blur(50px); opacity: 0.55; pointer-events: none; z-index: 0;
+}
+
+.hero-inner { position: relative; z-index: 1; text-align: center; }
+
+.hero-logo {
+    display: block; height: 132px; width: auto; margin: 0 auto 32px;
+    filter: drop-shadow(0 16px 36px rgba(12, 26, 80, 0.18));
+}
+@media (max-width: 720px) { .hero-logo { height: 104px; margin-bottom: 24px; } }
+
+.hero h1 {
+    font-family: var(--serif); font-weight: 800;
+    font-size: clamp(42px, 6.6vw, 82px); line-height: 1.04;
+    letter-spacing: -0.035em; margin: 0 0 24px;
+    background: linear-gradient(92deg, var(--sky) 0%, var(--purple) 30%, var(--pink) 60%, var(--gold) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.hero p.lead {
+    font-size: clamp(18px, 2vw, 22px); color: var(--ink-dim);
+    max-width: 660px; margin: 0 auto 26px; letter-spacing: -0.01em;
+}
+
+.verified {
+    display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 34px;
+    padding: 8px 15px; border-radius: 999px;
+    background: color-mix(in srgb, #28C840 12%, transparent);
+    border: 1px solid color-mix(in srgb, #28C840 32%, transparent);
+    color: var(--ink-dim); font-size: 13.5px; letter-spacing: -0.005em;
+}
+.verified strong { color: var(--ink); font-weight: 700; }
+.verified svg { width: 15px; height: 15px; color: #1a9e37; }
+
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 56px; }
+
+.btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 24px; border-radius: 999px;
+    font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: -0.005em;
+    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer; border: 0;
+}
+.btn:hover { transform: translateY(-1px); opacity: 1; }
+
+.btn-primary {
+    color: #fff;
+    background: linear-gradient(92deg, var(--sky) 0%, var(--purple) 35%, var(--pink) 70%, var(--gold) 100%);
+    background-size: 180% 100%; background-position: 0% 0%;
+    box-shadow: 0 8px 32px -8px color-mix(in srgb, var(--purple) 60%, transparent);
+}
+.btn-primary:hover {
+    background-position: 100% 0%;
+    box-shadow: 0 12px 40px -8px color-mix(in srgb, var(--pink) 60%, transparent);
+}
+
+.btn-secondary { color: var(--ink); background: var(--surface); border: 1px solid var(--hairline-strong); }
+.btn-secondary:hover { background: var(--surface-2); }
+
+/* ---------- Terminal ---------- */
+
+.term {
+    background: var(--code-bg); border-radius: var(--r-lg);
+    border: 1px solid var(--hairline-strong); overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 30px 80px -20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03);
+    text-align: left; max-width: 760px; margin: 0 auto;
+}
+
+.term-bar {
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.term-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,0.15) inset; }
+.term-dot.r { background: #FF5F57; } .term-dot.y { background: #FEBC2E; } .term-dot.g { background: #28C840; }
+.term-title { margin-left: auto; margin-right: auto; font-size: 12px; color: rgba(245,247,255,0.5); letter-spacing: 0.02em; transform: translateX(-30px); }
+
+.term pre {
+    margin: 0; padding: 22px 24px 24px; font-family: var(--mono);
+    font-size: 13.5px; line-height: 1.7; color: var(--code-fg); overflow-x: auto; white-space: pre;
+}
+
+.term .prompt { color: var(--code-prompt); }
+.term .cmd    { color: var(--code-fg); }
+.term .flag   { color: var(--code-key); }
+.term .arg    { color: var(--code-str); }
+.term .ok     { color: #4ADE80; }
+.term .info   { color: var(--code-key); }
+.term .dim    { color: var(--code-cmt); }
+
+/* ---------- Section heads ---------- */
+
+.eyebrow {
+    display: inline-block; font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px;
+}
+
+h2 { font-family: var(--serif); font-weight: 800; font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; letter-spacing: -0.025em; margin: 0 0 20px; color: var(--ink); }
+h3 { font-family: var(--serif); font-weight: 700; font-size: 20px; letter-spacing: -0.015em; margin: 0 0 8px; color: var(--ink); }
+p { margin: 0 0 16px; color: var(--ink-dim); }
+p strong { color: var(--ink); font-weight: 600; }
+
+/* ---------- Problem ---------- */
+
+.problem h2 { max-width: 720px; }
+.problem-grid { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 720px) { .problem-grid { grid-template-columns: 1fr; gap: 16px; } }
+
+.problem-card { padding: 28px; background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+.problem-card .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+.problem-card p { margin-bottom: 0; }
+
+/* ---------- Features ---------- */
+
+.features-grid {
+    margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--hairline); border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--hairline);
+}
+@media (max-width: 900px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) { .features-grid { grid-template-columns: 1fr; } }
+
+.feature { background: var(--surface); padding: 32px 28px; }
+.feature-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; margin-bottom: 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--sky) 22%, transparent), color-mix(in srgb, var(--purple) 22%, transparent));
+    color: var(--ink);
+}
+.feature-icon svg { width: 18px; height: 18px; }
+.feature p { font-size: 15px; margin-bottom: 0; }
+
+/* ---------- Steps ---------- */
+
+.steps { margin-top: 56px; display: grid; grid-template-columns: 1fr; gap: 32px; }
+.step { display: grid; grid-template-columns: 80px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 720px) { .step { grid-template-columns: 1fr; gap: 12px; } }
+
+.step-num {
+    font-family: var(--serif); font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: -0.04em;
+    background: linear-gradient(160deg, var(--sky), var(--purple));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.step-body h3 { margin-bottom: 6px; }
+.step-body p { font-size: 15.5px; }
+
+.step-code {
+    margin-top: 14px; background: var(--code-bg); color: var(--code-fg);
+    border: 1px solid var(--hairline-strong); border-radius: var(--r-md);
+    padding: 14px 18px; font-family: var(--mono); font-size: 13.5px; line-height: 1.6; overflow-x: auto; white-space: pre;
+}
+
+/* ---------- Comparison ---------- */
+
+.compare-grid { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
+@media (max-width: 900px) { .compare-grid { grid-template-columns: 1fr; } }
+
+.compare-card { background: var(--code-bg); color: var(--code-fg); border: 1px solid var(--hairline-strong); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+.compare-head {
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+.compare-head .title { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,247,255,0.7); }
+.compare-head .meta { font-family: var(--mono); font-size: 11px; color: rgba(245,247,255,0.45); }
+.compare-head.good .title { color: var(--gold); }
+
+.compare-card pre { margin: 0; padding: 20px; font-family: var(--mono); font-size: 12.5px; line-height: 1.62; overflow-x: auto; flex: 1; white-space: pre; }
+.compare-card .x { color: var(--code-cmt); }
+.compare-card .k { color: var(--sky); }
+.compare-card .s { color: var(--gold); }
+.compare-card .b { color: var(--pink); }
+.compare-card .g { color: #4ADE80; }
+
+/* ---------- Install ---------- */
+
+.install { text-align: center; background: var(--bg-alt); }
+.install-code {
+    margin: 32px auto 0; max-width: 580px; background: var(--code-bg); color: var(--code-fg);
+    border: 1px solid var(--hairline-strong); border-radius: var(--r-md);
+    padding: 18px 22px; font-family: var(--mono); font-size: 14px; text-align: left; overflow-x: auto; white-space: pre;
+}
+.install-fallback { max-width: 580px; margin: 36px auto 12px; font-size: 14px; color: var(--ink-dim); text-align: left; letter-spacing: -0.005em; }
+.install-fallback strong { color: var(--ink); font-weight: 600; }
+.install-fallback + .install-code { margin-top: 0; }
+.install-meta { margin-top: 28px; font-size: 14px; color: var(--ink-faint); }
+.install-meta a { color: var(--ink-dim); border-bottom: 1px solid var(--hairline-strong); }
+.install-meta a:hover { color: var(--ink); }
+
+.dev-note {
+    display: inline-flex; align-items: center; gap: 8px; margin: 22px auto 0;
+    padding: 9px 14px; border-radius: 999px;
+    background: color-mix(in srgb, var(--gold) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+    color: var(--ink-dim); font-size: 13px; letter-spacing: -0.005em;
+}
+.dev-note strong { color: var(--ink); font-weight: 700; }
+.dev-note .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent); }
+
+/* ---------- Footer ---------- */
+
+footer { border-top: 1px solid var(--hairline); padding: 32px 0 48px; color: var(--ink-faint); font-size: 13px; }
+.foot-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 28px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.foot-inner a { color: var(--ink-dim); }
+.foot-mark { display: inline-flex; align-items: center; transition: opacity 0.18s ease; opacity: 0.78; }
+.foot-mark:hover { opacity: 1; }
+.foot-mark img { height: 36px; width: auto; display: block; }
+</style>
+</head>
+
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="#" class="brand">
+            <img src="favicon.svg" alt="" class="brand-logo">
+            httpsuite
+            <span class="version-pill">pre-1.0</span>
+        </a>
+        <div class="nav-links">
+            <a href="#how">How it works</a>
+            <a href="#conformance">Conformance</a>
+            <a href="#install">Install</a>
+            <a href="https://github.com/uradical/httpsuite">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="container hero-inner">
+        <img src="favicon.svg" alt="httpsuite" class="hero-logo">
+        <h1>JetBrains .http tests,<br>without the JVM.</h1>
+        <p class="lead">
+            httpsuite runs the <code>.http</code> files you already author in GoLand or VS Code —
+            pre-request scripts, response handlers, <code>client.test</code> assertions and all —
+            as tests in CI. One static binary. No JDK, no CGO, no container bloat.
+        </p>
+        <div class="verified">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Verified conformant</strong> against JetBrains' own <code>ijhttp</code></span>
+        </div>
+        <div class="hero-ctas">
+            <a class="btn btn-primary" href="#install">Install</a>
+            <a class="btn btn-secondary" href="https://github.com/uradical/httpsuite">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+                </svg>
+                View on GitHub
+            </a>
+        </div>
+
+        <div class="term">
+            <div class="term-bar">
+                <span class="term-dot r"></span>
+                <span class="term-dot y"></span>
+                <span class="term-dot g"></span>
+                <span class="term-title">ci — httpsuite — 80×24</span>
+            </div>
+<pre><span class="prompt">$</span> <span class="cmd">httpsuite</span> <span class="arg">./api</span>
+
+<span class="ok">PASS</span>  POST  https://api.example.com/login     <span class="info">200</span>  89ms
+  <span class="ok">✓</span>  logs in and captures the token
+<span class="ok">PASS</span>  GET   https://api.example.com/profile   <span class="info">200</span>  12ms
+  <span class="ok">✓</span>  returns the created user
+  <span class="ok">✓</span>  name matches
+
+<span class="dim">2 requests  2 passed  0 failed  101ms</span>
+</pre>
+        </div>
+    </div>
+</header>
+
+<section class="problem">
+    <div class="container">
+        <span class="eyebrow">The problem</span>
+        <h2>API tests shouldn't drag a JVM into CI.</h2>
+        <p class="prose">
+            The JetBrains HTTP Client is a great way to author and debug API requests — but running
+            those same <code>.http</code> files in CI means shipping <code>ijhttp</code> and a
+            <strong>JDK 25</strong> into every pipeline and container image. httpsuite runs the
+            identical files as a single ~14&nbsp;MB static binary: the same scripts, the same
+            assertions, none of the runtime.
+        </p>
+
+        <div class="problem-grid">
+            <div class="problem-card">
+                <div class="label">What it does</div>
+                <p>Executes your requests and their pre-request / response-handler JavaScript, evaluates <code>client.test</code> and declarative <code>#&nbsp;@expect</code> checks, propagates variables across requests, and reports pass/fail for a terminal or CI.</p>
+            </div>
+            <div class="problem-card">
+                <div class="label">What it doesn't need</div>
+                <p>No JVM, no CGO, no daemon. A single static binary that runs on macOS, Windows, and any Linux — Alpine/musl, distroless, and <code>FROM scratch</code> containers included.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <span class="eyebrow">Features</span>
+        <h2>Everything the runner needs. Nothing it doesn't.</h2>
+
+        <div class="features-grid">
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4-9 4-9-4 9-4z"/><path d="M3 10l9 4 9-4"/><path d="M3 14l9 4 9-4"/></svg>
+                </div>
+                <h3>One static binary</h3>
+                <p>Pure Go, no CGO, no JVM. ~14&nbsp;MB, statically linked, cross-compiles to macOS, Windows, and every Linux arch. Drops into a distroless or scratch image unchanged.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <h3>JetBrains-compatible scripting</h3>
+                <p>Pre-request <code>&lt; {% %}</code> and response <code>&gt; {% %}</code> handlers, <code>client.test</code>, <code>client.global</code>, the response DOM, and <code>jsonPath</code> — executed by the pure-Go goja engine (ES2015+).</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h3>Verified against ijhttp</h3>
+                <p>A conformance harness runs the same <code>.http</code> files through httpsuite and JetBrains' own CLI, then diffs their JUnit reports test-by-test. On the shared API, they agree.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </div>
+                <h3>Declarative assertions</h3>
+                <p>Don't want to write JavaScript? Attach <code>#&nbsp;@expect status == 201</code> comments. Status, headers, JSON body paths, types, dates, and duration — no scripting required.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                </div>
+                <h3>Suite orchestration</h3>
+                <p>An <code>httpsuite.yaml</code> groups files, runs them in parallel or serial with per-group timeouts, and layers <code>{{variables}}</code>. Or just point it at a directory.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                </div>
+                <h3>CI-native output</h3>
+                <p>Coloured and aligned on a terminal, plain and diffable with no TTY, and JUnit XML via <code>--report</code> for your CI dashboard. Exit&nbsp;0 pass, 1 fail, 2 setup error.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="how">
+    <div class="container">
+        <span class="eyebrow">How it works</span>
+        <h2>From GoLand to green pipeline in three steps.</h2>
+
+        <div class="steps">
+
+            <div class="step">
+                <div class="step-num">01</div>
+                <div class="step-body">
+                    <h3>Install</h3>
+                    <p>A single binary via Homebrew or <code>go install</code>. Released binaries need no toolchain.</p>
+                    <pre class="step-code">brew install uradical/tap/httpsuite
+# or
+go install github.com/uradical/httpsuite@latest</pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">02</div>
+                <div class="step-body">
+                    <h3>Point it at your .http files</h3>
+                    <p>The same files you author and debug in the IDE. Add <code>&gt; {% client.test(...) %}</code> handlers, or attach declarative <code>#&nbsp;@expect</code> checks — whichever you prefer.</p>
+                    <pre class="step-code">GET {{base}}/users/{{id}}
+
+&gt; {%
+  client.test("returns the user", () =&gt; {
+    client.assert(response.status === 200);
+    client.assert(response.body.name === "Ada");
+  });
+%}</pre>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">03</div>
+                <div class="step-body">
+                    <h3>Run it in CI</h3>
+                    <p>Point httpsuite at a file or directory. It exits non-zero on any failure and writes a JUnit report for your dashboard — no JDK, no Docker image with a runtime baked in.</p>
+                    <pre class="step-code">httpsuite --report report.xml ./api</pre>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="conformance">
+    <div class="container">
+        <span class="eyebrow">Before &amp; after</span>
+        <h2>Same file in the IDE and the pipeline.</h2>
+        <p class="prose">
+            The request and its response-handler test are authored once in GoLand. httpsuite runs
+            the identical file in CI — and a conformance harness proves it agrees with JetBrains'
+            own <code>ijhttp</code>, test by test.
+        </p>
+
+        <div class="compare-grid">
+
+            <div class="compare-card">
+                <div class="compare-head">
+                    <span class="title">Authored in GoLand</span>
+                    <span class="meta">login.http</span>
+                </div>
+<pre><span class="x">@base = https://api.example.com</span>
+
+<span class="b">POST</span> <span class="s">{{base}}/login</span>
+<span class="k">Content-Type</span>: application/json
+
+{ "user": "ada", "pass": "..." }
+
+<span class="b">&gt;</span> {%
+  client.<span class="k">test</span>(<span class="s">"logs in"</span>, () =&gt; {
+    client.assert(response.status === <span class="s">200</span>);
+    client.global.set(<span class="s">"token"</span>, response.body.token);
+  });
+%}</pre>
+            </div>
+
+            <div class="compare-card">
+                <div class="compare-head good">
+                    <span class="title">httpsuite in CI</span>
+                    <span class="meta">$ — exit 0</span>
+                </div>
+<pre><span class="b">$</span> httpsuite <span class="k">--report</span> report.xml ./api
+
+<span class="g">PASS</span>  POST  .../login    <span class="k">200</span>   89ms
+  <span class="g">✓</span>  logs in
+<span class="g">PASS</span>  GET   .../profile  <span class="k">200</span>   12ms
+  <span class="g">✓</span>  returns the created user
+
+<span class="x"># report.xml → JUnit for your CI dashboard</span>
+<span class="x"># conformance harness vs ijhttp: CONFORMANT</span></pre>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="install" class="install">
+    <div class="container">
+        <span class="eyebrow">Install</span>
+        <h2>One binary. No runtime.</h2>
+        <p class="prose" style="margin-left:auto;margin-right:auto;">
+            Static binaries for macOS, Linux, and Windows. From source needs Go 1.26+; released
+            binaries need nothing. MIT licensed.
+        </p>
+        <p class="dev-note" style="margin-left:auto;margin-right:auto;">
+            <span class="dot"></span>
+            <span><strong>Pre-1.0.</strong> In active development &mdash; flags and conventions may change before v1.</span>
+        </p>
+
+<pre class="install-code">brew install uradical/tap/httpsuite
+
+httpsuite ./api</pre>
+
+        <p class="install-fallback">
+            <strong>Until v1.0:</strong> the Homebrew tap may not be published yet. Install with Go, or build from source:
+        </p>
+<pre class="install-code">go install github.com/uradical/httpsuite@latest
+# or
+git clone https://github.com/uradical/httpsuite
+cd httpsuite && go build .</pre>
+
+        <p class="install-meta">
+            <a href="https://github.com/uradical/httpsuite/blob/main/README.md">Documentation</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/uradical/httpsuite/tree/main/conformance">Conformance harness</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/uradical/httpsuite">Source code</a>
+        </p>
+    </div>
+</section>
+
+<footer>
+    <div class="foot-inner">
+        <span>© 2026 <a href="https://uradical.io">uRadical</a> · MIT licensed</span>
+        <a href="https://uradical.io" class="foot-mark" aria-label="uRadical">
+            <img src="uradical.png" alt="uRadical">
+        </a>
+    </div>
+</footer>
+
+</body>
+</html>
